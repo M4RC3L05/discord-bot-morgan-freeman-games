@@ -34,12 +34,21 @@ class Player {
 
     /**
      *
+     *
+     * @type {import("ytpl")}
+     *
+     */
+    ytpl;
+
+    /**
+     *
      * @param {MusicQueue} musicQueue
      * @param {import("ytdl-core")} ytdl
      *
      */
-    constructor(musicQueue, ytdl) {
+    constructor(musicQueue, ytdl, ytpl) {
         this.ytdl = ytdl;
+        this.ytpl = ytpl;
         this.musicQueue = musicQueue;
         this.state = {
             currPlaying: null,
@@ -94,12 +103,24 @@ class Player {
         }
     }
 
+    async loadPlaylist(playlistId) {
+        this.closeStreams();
+
+        const playListRes = await this.ytpl(playlistId);
+
+        this.musicQueue.clear();
+        this.musicQueue.addMany(
+            playListRes.items.map(i => ({ title: i.title, url: i.url }))
+        );
+    }
+
     pause() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
 
-        if (!this.state.stream || this.state.stream.paused)
-            throw Error("Music already is paused.");
+        if (!this.state.stream) throw Error("The player did not started.");
+
+        if (this.state.stream.paused) throw Error("Music already is paused.");
 
         this.state.stream.pause();
     }
@@ -108,8 +129,9 @@ class Player {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
 
-        if (!this.state.stream || !this.state.stream.paused)
-            throw Error("Music already playing.");
+        if (!this.state.stream) throw Error("The player did not started.");
+
+        if (!this.state.stream.paused) throw Error("Music already playing.");
 
         this.state.stream.resume();
     }
@@ -117,6 +139,8 @@ class Player {
     start() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
+
+        if (this.musicQueue.size <= 0) throw Error("No musics in the queue.");
 
         this.closeStreams();
 
@@ -126,13 +150,15 @@ class Player {
 
         this.state.stream = this.state.voiceChannel.connection.playStream(
             this.state.ytStream,
-            { volume: 0.05 }
+            { volume: 0.04 }
         );
     }
 
     next() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
+
+        if (this.musicQueue.size <= 0) throw Error("No musics in the queue.");
 
         this.closeStreams();
 
@@ -144,13 +170,15 @@ class Player {
 
         this.state.stream = this.state.voiceChannel.connection.playStream(
             this.state.ytStream,
-            { volume: 0.05 }
+            { volume: 0.04 }
         );
     }
 
     prev() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
+
+        if (this.musicQueue.size <= 0) throw Error("No musics in the queue.");
 
         this.closeStreams();
 
@@ -170,6 +198,8 @@ class Player {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
 
+        if (this.musicQueue.size <= 0) throw Error("No musics in the queue.");
+
         this.closeStreams();
 
         this.musicQueue.getFirst();
@@ -180,6 +210,8 @@ class Player {
     }
 
     shuffle() {
+        if (this.musicQueue.size <= 0) throw Error("No musics in the queue.");
+
         const musics = this.musicQueue.head.slice();
 
         function shuffle(a) {

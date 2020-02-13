@@ -118,9 +118,24 @@ class Bot {
                 `"${rawCommand}"`
             );
 
-        const method = rawCommand
+        let method = rawCommand
             .replace(`${command}`, "")
             .replace(`${config.commandCallerSeparator}`, "");
+        let args = undefined;
+
+        let hasArgs = method.indexOf(config.commandArgsStart) !== -1;
+
+        if (hasArgs)
+            method = method.slice(0, method.indexOf(config.commandArgsStart));
+
+        if (hasArgs)
+            args = rawCommand
+                .slice(
+                    rawCommand.indexOf(config.commandArgsStart) + 1,
+                    rawCommand.indexOf(config.commandArgsEnd)
+                )
+                .split(config.commandArgsSeparartor)
+                .map(arg => arg.trim());
 
         if (
             !method ||
@@ -132,7 +147,15 @@ class Bot {
             else throw new InvalidMethodError(command, method);
         }
 
-        return { command, call: this.commands[command][method] };
+        return {
+            command,
+            call: hasArgs
+                ? this.commands[command][method].bind(
+                      this.commands[command],
+                      ...args
+                  )
+                : this.commands[command][method]
+        };
     }
 
     /**

@@ -24,83 +24,28 @@ class Music {
         this.stop = this.stop.bind(this);
         this.shuffle = this.shuffle.bind(this);
         this.help = this.help.bind(this);
+        this.nowPlaying = this.nowPlaying.bind(this);
     }
 
     async _init() {
         console.log("Initializing music command...");
-
-        // this.player.addMusicToQueue({
-        //     url: "https://www.youtube.com/watch?v=-GZKkgjchyw",
-        //     title: "#1"
-        // });
-        // this.player.addMusicToQueue({
-        //     url: "https://www.youtube.com/watch?v=46ggaeH-QiQ",
-        //     title: "#2"
-        // });
-        // this.player.addMusicToQueue({
-        //     url: "https://www.youtube.com/watch?v=O_oWrNDBPlk",
-        //     title: "#3"
-        // });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=7xR4oMree4A&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=2&t=0s",
-            title: "Landing (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=VuH_gmnK5Ow&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=2",
-            title: "Quiet Mornings (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=mVkkXhDLlwQ&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=3",
-            title: "Haze (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=Sj3Ke7wQlDI&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=4",
-            title: "Click (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=aB_QNyPdS64&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=5",
-            title: "Space Cadet (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=ZAzjhwHn1NQ&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=7",
-            title: "Envision (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=jeFPJNOeNcE&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=8",
-            title: "223° (Original Mix)"
-        });
-        this.player.addMusicToQueue({
-            url:
-                "https://www.youtube.com/watch?v=M3m7hKD1V6Q&list=PLt7bG0K25iXi07OYe7jBTXvvdGItGM25I&index=9",
-            title: "Make You Hers (Original Mix)"
-        });
     }
 
     /**
      *
-     * @param {import("discord.js").Message} message
+     * @param {string} playlistId The playlist id
+     * @param {import("discord.js").Message} message the discord text message
      *
      */
-    async play(message) {
+    async addPlaylist(playlistId, message) {
         try {
             if (!message.member.voiceChannel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
-            this.player.start();
-            this.player.state.stream.on("end", () => {
-                this.next(message);
-            });
+            await this.player.loadPlaylist(playlistId);
             return {
                 success: true,
-                message: this.nowPlaying(),
+                message: "Playlist added",
                 shouldMention: true
             };
         } catch (e) {
@@ -115,7 +60,37 @@ class Music {
 
     /**
      *
-     * @param {import("discord.js").Message} message
+     * @param {import("discord.js").Message} message the discord text message
+     *
+     */
+    async play(message) {
+        try {
+            if (!message.member.voiceChannel)
+                throw Error("You must be on a voice channel.");
+
+            await this.player.bindToVoiceChannel(message.member.voiceChannel);
+            this.player.start();
+            this.player.state.stream.on("end", () => {
+                this.next(message);
+            });
+            return {
+                success: true,
+                message: `🎶 **Now Playing:** ${this.player.musicQueue.currentMusic.title}`,
+                shouldMention: true
+            };
+        } catch (e) {
+            return {
+                success: false,
+                message:
+                    e instanceof Error ? e.message : "Something went wrong",
+                shouldMention: true
+            };
+        }
+    }
+
+    /**
+     *
+     * @param {import("discord.js").Message} message the discord text message
      *
      */
     async pause(message) {
@@ -143,7 +118,7 @@ class Music {
 
     /**
      *
-     * @param {import("discord.js").Message} message
+     * @param {import("discord.js").Message} message the discord text message
      *
      */
     async resume(message) {
@@ -172,7 +147,7 @@ class Music {
 
     /**
      *
-     * @param {import("discord.js").Message} message
+     * @param {import("discord.js").Message} message the discord text message
      *
      */
     async next(message) {
@@ -189,7 +164,7 @@ class Music {
 
             return {
                 success: true,
-                message: this.nowPlaying(),
+                message: `🎶 **Now Playing:** ${this.player.musicQueue.currentMusic.title}`,
                 shouldMention: true
             };
         } catch (e) {
@@ -204,7 +179,7 @@ class Music {
 
     /**
      *
-     * @param {import("discord.js").Message} message
+     * @param {import("discord.js").Message} message the discord text message
      *
      */
     async prev(message) {
@@ -222,7 +197,7 @@ class Music {
 
             return {
                 success: true,
-                message: this.nowPlaying(),
+                message: `🎶 **Now Playing:** ${this.player.musicQueue.currentMusic.title}`,
                 shouldMention: true
             };
         } catch (e) {
@@ -237,7 +212,7 @@ class Music {
 
     /**
      *
-     * @param {import("discord.js").Message} message
+     * @param {import("discord.js").Message} message the discord text message
      *
      */
     async stop(message) {
@@ -283,7 +258,18 @@ class Music {
     }
 
     nowPlaying() {
-        return `🎶 **Now Playing:** ${this.player.musicQueue.currentMusic.title}`;
+        if (this.player.musicQueue.size <= 0)
+            return {
+                success: false,
+                message: "The queue is empty",
+                shouldMention: false
+            };
+
+        return {
+            success: true,
+            message: `🎶 **Now Playing:** ${this.player.musicQueue.currentMusic.title}`,
+            shouldMention: true
+        };
     }
 
     help() {
