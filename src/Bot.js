@@ -4,11 +4,12 @@ const {
     InvalidMethodError
 } = require("./errors");
 const config = require("./../config");
+const { AbstractCommand } = require("./commands/AbstractCommand");
 
 class Bot {
     /**
      *
-     * @type {{[key: string]: {}}}
+     * @type {{[key: string]: AbstractCommand}}
      *
      */
     commands;
@@ -30,7 +31,7 @@ class Bot {
     /**
      *
      * @param {import("discord.js").Client} discordClient
-     * @param {{[key: string]: {}}} commands
+     * @param {{[key: string]: AbstractCommand}} commands
      *
      */
     constructor(discordClient, commands) {
@@ -42,8 +43,8 @@ class Bot {
     async bootstrapCommands() {
         await Promise.all(
             Object.values(this.commands)
-                .filter(command => "_init" in command)
-                .map(command => command._init())
+                .filter(command => "init" in command)
+                .map(command => command.init())
         );
     }
 
@@ -121,7 +122,8 @@ class Bot {
         let method = rawCommand
             .replace(`${command}`, "")
             .replace(`${config.commandCallerSeparator}`, "");
-        let args = undefined;
+
+        let args = {};
 
         let hasArgs = method.indexOf(config.commandArgsStart) !== -1;
 
@@ -135,26 +137,33 @@ class Bot {
                     rawCommand.indexOf(config.commandArgsEnd)
                 )
                 .split(config.commandArgsSeparartor)
-                .map(arg => arg.trim());
+                .map(arg => arg.trim())
+                .filter(arg => arg.length > 0)
+                .map(arg => arg.split(":").map(x => x.trim()))
+                .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
 
-        if (
-            !method ||
-            method.startsWith("_") ||
-            !(method in this.commands[command])
-        ) {
-            if ("help" in this.commands[command])
-                return { command, call: this.commands[command].help };
+        if (!method || !this.commands[command].methods.has(method)) {
+            if (this.commands[command].methods.has("help"))
+                return {
+                    commandName: command,
+                    command: this.commands[command],
+                    method: this.commands[command].methods.get("help"),
+                    args
+                };
             else throw new InvalidMethodError(command, method);
         }
 
+        if (
+            this.commands[command].methods.get(method).hasArgs &&
+            Object.keys(args).length <= 0
+        )
+            throw Error("This method should have args.");
+
         return {
-            command,
-            call: hasArgs
-                ? this.commands[command][method].bind(
-                      this.commands[command],
-                      ...args
-                  )
-                : this.commands[command][method]
+            commandName: command,
+            command: this.commands[command],
+            method: this.commands[command].methods.get(method),
+            args
         };
     }
 
@@ -193,7 +202,10 @@ class Bot {
 
         this.isRunningCommand = true;
         /** @type{{success: boolean, message?: string, shouldMention: boolean}} */
-        const commandRes = await parsedCommand.call(message);
+        const commandRes = await parsedCommand.method.call(
+            message,
+            parsedCommand.args
+        );
         this.isRunningCommand = false;
 
         return commandRes;

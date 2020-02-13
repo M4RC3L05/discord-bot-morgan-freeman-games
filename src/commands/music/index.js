@@ -1,6 +1,7 @@
 const { Player } = require("./player/Player");
+const { AbstractCommand } = require("./../AbstractCommand");
 
-class Music {
+class Music extends AbstractCommand {
     /**
      *
      * @type {Player}
@@ -14,8 +15,9 @@ class Music {
      *
      */
     constructor(player) {
-        this.player = player;
+        super();
 
+        this.player = player;
         this.play = this.play.bind(this);
         this.pause = this.pause.bind(this);
         this.resume = this.resume.bind(this);
@@ -28,17 +30,48 @@ class Music {
         this.loadPlaylist = this.loadPlaylist.bind(this);
     }
 
-    async _init() {
+    async init() {
         console.log("Initializing music command...");
+
+        this.registerMethod("play", this.play, "Start playing music.", false);
+        this.registerMethod("pause", this.pause, "Pause music.", false);
+        this.registerMethod(
+            "resume",
+            this.resume,
+            "Resume paused music.",
+            false
+        );
+        this.registerMethod("next", this.next, "Go to next music.", false);
+        this.registerMethod("prev", this.prev, "Go to last music.", false);
+        this.registerMethod("stop", this.stop, "Stop the player.", false);
+        this.registerMethod(
+            "shuffle",
+            this.shuffle,
+            "Shuffles the music queue.",
+            false
+        );
+        this.registerMethod("help", this.help, "Show help.", false);
+        this.registerMethod(
+            "nowPlaying",
+            this.nowPlaying,
+            " Show the music that is currently playing.",
+            false
+        );
+        this.registerMethod(
+            "loadPlaylist",
+            this.loadPlaylist,
+            "Loads a new youtube playlist.",
+            true
+        );
     }
 
     /**
      *
-     * @param {string} playlistId The playlist id
      * @param {import("discord.js").Message} message the discord text message
+     * @param {{playlistId: string}} args tthe args of the method
      *
      */
-    async loadPlaylist(playlistId, message) {
+    async loadPlaylist(message, { playlistId }) {
         try {
             if (!message.member.voiceChannel)
                 throw Error("You must be on a voice channel.");
@@ -274,18 +307,18 @@ class Music {
     }
 
     help() {
+        let txt = "";
+
+        const iter = this.methods.values();
+        let curr = iter.next();
+        while (!curr.done) {
+            txt += `\n\t**${curr.value.name}** - ${curr.value.description}`;
+            curr = iter.next();
+        }
+
         return {
             success: true,
-            message: `🆘 Here the valid methods for the music command:
-        **play** - Start playing music.
-        **pause** - Pause music.
-        **resume** - Resume paused music.
-        **next** - Go to next music.
-        **prev** - Go to last music.
-        **nowPlaying** - Show the music that is currently playing
-        **stop** - Stop the player
-        **shuffle** - Shuffles the music queue
-        **help** - Show help`,
+            message: `🆘 Here the valid methods for the music command:${txt}`,
             shouldMention: true
         };
     }
