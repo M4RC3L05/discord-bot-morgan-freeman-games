@@ -25,6 +25,7 @@ class Music {
         this.shuffle = this.shuffle.bind(this);
         this.help = this.help.bind(this);
         this.nowPlaying = this.nowPlaying.bind(this);
+        this.loadPlaylist = this.loadPlaylist.bind(this);
     }
 
     async _init() {
@@ -37,7 +38,7 @@ class Music {
      * @param {import("discord.js").Message} message the discord text message
      *
      */
-    async addPlaylist(playlistId, message) {
+    async loadPlaylist(playlistId, message) {
         try {
             if (!message.member.voiceChannel)
                 throw Error("You must be on a voice channel.");
