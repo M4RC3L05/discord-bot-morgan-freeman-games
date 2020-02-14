@@ -66,6 +66,10 @@ class Player {
         return true;
     }
 
+    clearQueue() {
+        this.musicQueue.clear();
+    }
+
     closeStreams() {
         try {
             if (this.state.stream) {

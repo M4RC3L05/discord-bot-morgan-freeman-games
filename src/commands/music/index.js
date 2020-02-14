@@ -28,6 +28,8 @@ class Music extends AbstractCommand {
         this.help = this.help.bind(this);
         this.nowPlaying = this.nowPlaying.bind(this);
         this.loadPlaylist = this.loadPlaylist.bind(this);
+        this.addToQueue = this.addToQueue.bind(this);
+        this.clearMusicQueue = this.clearMusicQueue.bind(this);
     }
 
     async init() {
@@ -63,20 +65,88 @@ class Music extends AbstractCommand {
             "Loads a new youtube playlist.",
             true
         );
+        this.registerMethod(
+            "addToQueue",
+            this.addToQueue,
+            "Adds a youtube video to the queue.",
+            true
+        );
+        this.registerMethod(
+            "clearMusicQueue",
+            this.clearMusicQueue,
+            "Clears the music queue",
+            false
+        );
     }
 
     /**
      *
      * @param {import("discord.js").Message} message the discord text message
-     * @param {{playlistId: string}} args tthe args of the method
+     * @param {string[]} args tthe args of the method
      *
      */
-    async loadPlaylist(message, { playlistId }) {
+    async addToQueue(message, [url, title]) {
+        try {
+            if (!message.member.voiceChannel)
+                throw Error("You must be on a voice channel.");
+
+            await this.player.addMusicToQueue({ url, title });
+            return {
+                success: true,
+                message: "Music added.",
+                shouldMention: true
+            };
+        } catch (e) {
+            return {
+                success: false,
+                message:
+                    e instanceof Error ? e.message : "Something went wrong",
+                shouldMention: true
+            };
+        }
+    }
+
+    /**
+     *
+     * @param {import("discord.js").Message} message the discord text message
+     *
+     */
+    async clearMusicQueue(message) {
+        try {
+            if (!message.member.voiceChannel)
+                throw Error("You must be on a voice channel.");
+
+            this.player.closeStreams();
+            this.player.clearQueue();
+
+            return {
+                success: true,
+                message: "Music queue cleared.",
+                shouldMention: true
+            };
+        } catch (e) {
+            return {
+                success: false,
+                message:
+                    e instanceof Error ? e.message : "Something went wrong",
+                shouldMention: true
+            };
+        }
+    }
+
+    /**
+     *
+     * @param {import("discord.js").Message} message the discord text message
+     * @param {string[]} args tthe args of the method
+     *
+     */
+    async loadPlaylist(message, [playlistId]) {
         try {
             if (!message.member.voiceChannel)
                 throw Error("You must be on a voice channel.");
 
             await this.player.loadPlaylist(playlistId);
+            console.log(this.player.musicQueue);
             return {
                 success: true,
                 message: "Playlist added",

@@ -123,7 +123,7 @@ class Bot {
             .replace(`${command}`, "")
             .replace(`${config.commandCallerSeparator}`, "");
 
-        let args = {};
+        let args = [];
 
         let hasArgs = method.indexOf(config.commandArgsStart) !== -1;
 
@@ -138,9 +138,7 @@ class Bot {
                 )
                 .split(config.commandArgsSeparartor)
                 .map(arg => arg.trim())
-                .filter(arg => arg.length > 0)
-                .map(arg => arg.split(":").map(x => x.trim()))
-                .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
+                .filter(arg => arg.length > 0);
 
         if (!method || !this.commands[command].methods.has(method)) {
             if (this.commands[command].methods.has("help"))
