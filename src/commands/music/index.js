@@ -82,7 +82,7 @@ class Music extends AbstractCommand {
     /**
      *
      * @param {import("discord.js").Message} message the discord text message
-     * @param {string[]} args tthe args of the method
+     * @param {string[]} args the args of the method
      *
      */
     async addToQueue(message, [url, title]) {
@@ -146,7 +146,6 @@ class Music extends AbstractCommand {
                 throw Error("You must be on a voice channel.");
 
             await this.player.loadPlaylist(playlistId);
-            console.log(this.player.musicQueue);
             return {
                 success: true,
                 message: "Playlist added",
