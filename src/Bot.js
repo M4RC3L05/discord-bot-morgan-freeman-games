@@ -50,7 +50,7 @@ class Bot {
 
     async run() {
         await this.bootstrapCommands();
-        await this.discordClient.login(process.env.DISCORD_BOT_TOKEN);
+        await this.discordClient.login(process.env.DISCORD_BOT_TOKEN)
 
         this.registerForDiscordEvents();
     }

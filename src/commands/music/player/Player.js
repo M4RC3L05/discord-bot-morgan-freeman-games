@@ -4,6 +4,7 @@ const { MusicQueue } = require("./MusicQueue");
  *
  * @typedef {object} PlayerState
  * @property {import("discord.js").VoiceChannel} [voiceChannel]
+ * @property {import("discord.js").VoiceConnection} [voiceConnection]
  * @property {import("discord.js").StreamDispatcher} [stream]
  * @property {any} [ytStream]
  * @property {{title: string, url: string}} currPlaying
@@ -53,15 +54,15 @@ class Player {
         this.state = {
             currPlaying: null,
             voiceChannel: null,
+            voiceConnection: null,
             stream: null,
             ytStream: null
         };
     }
 
     get isConnectedToVoiceChat() {
-        if (!this.state.voiceChannel) return false;
 
-        if (!this.state.voiceChannel.connection) return false;
+        if (!this.state.voiceChannel) return false;
 
         return true;
     }
@@ -83,7 +84,7 @@ class Player {
                 this.state.ytStream = undefined;
             }
         } catch {
-            console.log("oioioioioioioioioio");
+
         }
     }
 
@@ -94,16 +95,15 @@ class Player {
      */
     async bindToVoiceChannel(voiceChannel) {
         if (!this.isConnectedToVoiceChat) {
-            await voiceChannel.join();
-            this.state.voiceChannel = voiceChannel;
+            this.state.voiceChannel = voiceChannel
+            this.state.voiceConnection = await voiceChannel.join();
         } else if (
             this.isConnectedToVoiceChat &&
             this.state.voiceChannel.id !== voiceChannel.id
         ) {
             this.closeStreams();
             await this.state.voiceChannel.leave();
-            await voiceChannel.join();
-            this.state.voiceChannel = voiceChannel;
+            this.state.voiceConnection = await voiceChannel.join();
         }
     }
 
@@ -140,7 +140,7 @@ class Player {
         this.state.stream.resume();
     }
 
-    start() {
+    async start() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
 
@@ -148,17 +148,17 @@ class Player {
 
         this.closeStreams();
 
-        this.state.ytStream = this.ytdl(this.musicQueue.currentMusic.url, {
+        this.state.ytStream = await this.ytdl(this.musicQueue.currentMusic.url, {
             filter: "audioonly"
         });
 
-        this.state.stream = this.state.voiceChannel.connection.playStream(
+        this.state.stream = this.state.voiceConnection.play(
             this.state.ytStream,
-            { volume: 0.04 }
+            { volume: 0.04, type: 'opus' }
         );
     }
 
-    next() {
+    async next() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
 
@@ -168,17 +168,17 @@ class Player {
 
         this.musicQueue.getNextMusic();
 
-        this.state.ytStream = this.ytdl(this.musicQueue.currentMusic.url, {
+        this.state.ytStream = await this.ytdl(this.musicQueue.currentMusic.url, {
             filter: "audioonly"
         });
 
-        this.state.stream = this.state.voiceChannel.connection.playStream(
+        this.state.stream = this.state.voiceConnection.play(
             this.state.ytStream,
-            { volume: 0.04 }
+            { volume: 0.04, type: 'opus' }
         );
     }
 
-    prev() {
+    async prev() {
         if (!this.isConnectedToVoiceChat)
             throw Error("Not connected to voice channel.");
 
@@ -188,13 +188,13 @@ class Player {
 
         this.musicQueue.getPrevMusic();
 
-        this.state.ytStream = this.ytdl(this.musicQueue.currentMusic.url, {
+        this.state.ytStream = await this.ytdl(this.musicQueue.currentMusic.url, {
             filter: "audioonly"
         });
 
-        this.state.stream = this.state.voiceChannel.connection.playStream(
+        this.state.stream = this.state.voiceConnection.play(
             this.state.ytStream,
-            { volume: 0.04 }
+            { volume: 0.04, type: 'opus' }
         );
     }
 

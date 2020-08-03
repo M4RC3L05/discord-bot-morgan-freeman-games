@@ -4,6 +4,6 @@ const { MusicQueue } = require("./music/player/MusicQueue");
 
 module.exports = {
     music: new Music(
-        new Player(new MusicQueue(), require("ytdl-core"), require("ytpl"))
+        new Player(new MusicQueue(), require("ytdl-core-discord"), require("ytpl"))
     )
 };

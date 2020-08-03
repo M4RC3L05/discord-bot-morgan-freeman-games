@@ -87,7 +87,7 @@ class Music extends AbstractCommand {
      */
     async addToQueue(message, [url, title]) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
             await this.player.addMusicToQueue({ url, title });
@@ -113,7 +113,7 @@ class Music extends AbstractCommand {
      */
     async clearMusicQueue(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
             this.player.closeStreams();
@@ -142,9 +142,6 @@ class Music extends AbstractCommand {
      */
     async loadPlaylist(message, [playlistId]) {
         try {
-            if (!message.member.voiceChannel)
-                throw Error("You must be on a voice channel.");
-
             await this.player.loadPlaylist(playlistId);
             return {
                 success: true,
@@ -168,11 +165,12 @@ class Music extends AbstractCommand {
      */
     async play(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
-            this.player.start();
+            await this.player.bindToVoiceChannel(message.member.voice.channel);
+            await this.player.start();
+
             this.player.state.stream.on("end", () => {
                 this.next(message);
             });
@@ -198,10 +196,10 @@ class Music extends AbstractCommand {
      */
     async pause(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
+            await this.player.bindToVoiceChannel(message.member.voice.channel);
             this.player.pause();
 
             return {
@@ -226,10 +224,10 @@ class Music extends AbstractCommand {
      */
     async resume(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
+            await this.player.bindToVoiceChannel(message.member.voice.channel);
 
             this.player.resume();
 
@@ -255,12 +253,12 @@ class Music extends AbstractCommand {
      */
     async next(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
+            await this.player.bindToVoiceChannel(message.member.voice.channel);
 
-            this.player.next();
+            await this.player.next();
             this.player.state.stream.on("end", () => {
                 this.next(message);
             });
@@ -287,12 +285,12 @@ class Music extends AbstractCommand {
      */
     async prev(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
+            await this.player.bindToVoiceChannel(message.member.voice.channel);
 
-            this.player.prev();
+            await this.player.prev();
 
             this.player.state.stream.on("end", () => {
                 this.next(message);
@@ -320,10 +318,10 @@ class Music extends AbstractCommand {
      */
     async stop(message) {
         try {
-            if (!message.member.voiceChannel)
+            if (!message.member.voice.channel)
                 throw Error("You must be on a voice channel.");
 
-            await this.player.bindToVoiceChannel(message.member.voiceChannel);
+            await this.player.bindToVoiceChannel(message.member.voice.channel);
 
             this.player.stop();
 
